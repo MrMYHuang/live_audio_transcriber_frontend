@@ -1,7 +1,5 @@
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue';
-import { notification } from 'ant-design-vue';
-//import { UploadChangeParam } from 'ant-design-vue';
 import axios from "axios";
 
 const baseURL = 'http://localhost:8000';
@@ -18,9 +16,9 @@ const buttonName = computed(() => {
   return buttonStatus.value ? 'Stop' : 'Transcribe';
 });
 
-let ws;
-let stream;
-let recorder;
+let ws: WebSocket;
+let stream: MediaStream;
+let recorder: MediaRecorder;
 
 const handleSubmit = async () => {
   if (buttonStatus.value) {
@@ -49,7 +47,7 @@ const handleSubmit = async () => {
   };
 
   ws.onerror = (ev) => {
-    status.value = ev;
+    //status.value = ev;
   };
 
   ws.onclose = () => {
@@ -64,7 +62,12 @@ const handleSubmit = async () => {
     recorder.ondataavailable = async e => {
       if (e.data.size > 0 && ws.readyState === WebSocket.OPEN) {
         const arrayBuffer = await e.data.arrayBuffer();
-        const b64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+        const bytes = new Uint8Array(arrayBuffer);
+        let binary = '';
+        for (let i = 0; i < bytes.length; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        const b64 = btoa(binary);
         ws.send(JSON.stringify({ chunk: b64 }));
       }
     };
